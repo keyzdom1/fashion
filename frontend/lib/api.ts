@@ -43,7 +43,18 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const err = new Error(body.detail || `API error ${res.status}`);
+        const detail =
+          typeof body.detail === "string"
+            ? body.detail
+            : body.detail
+              ? JSON.stringify(body.detail)
+              : "";
+        const err = new Error(
+          detail ||
+            (res.status === 404
+              ? "Not found — the backend may need a redeploy on Render"
+              : `API error ${res.status}`)
+        );
         const transient = res.status >= 500;
         if (transient && attempt < attempts - 1) {
           lastError = err;

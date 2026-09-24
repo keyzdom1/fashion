@@ -196,14 +196,24 @@ export default function AdminProductsPage() {
       }
 
       let image_url: string | undefined;
+      let uploadWarning = "";
       if (imageFile) {
         const fd = new FormData();
         fd.append("file", imageFile);
-        const uploaded = await api<{ url: string }>("/uploads", {
-          method: "POST",
-          body: fd,
-        });
-        image_url = uploaded.url;
+        try {
+          const uploaded = await api<{ url: string }>("/uploads", {
+            method: "POST",
+            body: fd,
+          });
+          image_url = uploaded.url;
+        } catch (uploadErr) {
+          const msg = uploadErr instanceof Error ? uploadErr.message : "Upload failed";
+          if (/not found|404/i.test(msg)) {
+            uploadWarning = " Image upload is unavailable until the backend is redeployed on Render — product saved without image.";
+          } else {
+            throw uploadErr;
+          }
+        }
       }
 
       await api("/products", {
@@ -225,8 +235,12 @@ export default function AdminProductsPage() {
       setImageFile(null);
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-      setMsg("Product created" + (image_url ? " with image" : ""));
-      setMsgOk(true);
+      setMsg(
+        "Product created" +
+          (image_url ? " with image" : "") +
+          uploadWarning
+      );
+      setMsgOk(!uploadWarning);
       load();
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Failed");
