@@ -313,7 +313,7 @@ export default function AdminProductsPage() {
           )}
         </div>
 
-        <label className="block">
+        <label className="block md:col-span-2">
           <span className="mb-1 block text-sm font-medium">Category</span>
           <select
             value={form.category_slug}
@@ -330,17 +330,6 @@ export default function AdminProductsPage() {
         </label>
 
         <input
-          placeholder="Price"
-          type="number"
-          step="0.01"
-          min="0"
-          value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
-          required
-          className={inputCls}
-        />
-
-        <input
           placeholder="Name"
           value={form.name}
           onChange={(e) => {
@@ -355,20 +344,22 @@ export default function AdminProductsPage() {
           className={inputCls}
         />
         <input
+          placeholder="Price"
+          type="number"
+          step="0.01"
+          min="0"
+          value={form.price}
+          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          required
+          className={inputCls}
+        />
+        <input
           placeholder="Slug (e.g. red-satin-dress)"
           value={form.slug}
           onChange={(e) => setForm({ ...form, slug: e.target.value })}
           required
           className={inputCls}
         />
-        <textarea
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className={`${inputCls} md:col-span-2`}
-          rows={2}
-        />
-
         {!editingId && (
           <input
             placeholder="Stock per variant"
@@ -379,6 +370,13 @@ export default function AdminProductsPage() {
             className={inputCls}
           />
         )}
+        <textarea
+          placeholder="Description"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          className={`${inputCls} md:col-span-2`}
+          rows={2}
+        />
 
         {/* Image upload */}
         <div className="md:col-span-2">
