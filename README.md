@@ -9,9 +9,33 @@ Full-stack fashion e-commerce website.
 - `/frontend` — Next.js 14 App Router storefront + admin (Vercel)
 - `/backend` — FastAPI REST API (Render/Fly.io)
 
-## Local Setup
+## Deploy
 
-### Backend
+### 1. Backend → Render
+
+1. Push this repo to GitHub (done: `keyzdom1/fashion`).
+2. On [Render](https://dashboard.render.com) → **New** → **Blueprint** → connect the repo.
+3. Render picks up `render.yaml`. Set env var **`DATABASE_URL`** to your Neon connection string (use `ssl=require`, not `sslmode=`):
+   ```
+   postgresql+asyncpg://neondb_owner:...@ep-....neon.tech/neondb?ssl=require
+   ```
+4. Deploy → note the URL, e.g. `https://fashion-api.onrender.com`.
+
+### 2. Frontend → Vercel
+
+1. On [Vercel](https://vercel.com/new) → **Import** repo `keyzdom1/fashion`.
+2. Root `vercel.json` already builds `/frontend`. If asked for Root Directory, set it to `frontend`.
+3. Env var:
+   ```
+   NEXT_PUBLIC_API_URL=https://fashion-api.onrender.com/api/v1
+   ```
+4. Deploy.
+
+After both are up, open the Vercel URL — store, cart, and admin should work.
+
+### Local
+
+**Backend**
 
 ```bash
 cd backend
