@@ -24,6 +24,34 @@ function getAuthHeaders(json = true): Record<string, string> {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const rt = localStorage.getItem("refresh_token");
+        if (!rt) return false;
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: rt }),
+        });
+        if (!res.ok) return false;
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshPromise = null;
+      }
+    })();
+  }
+  return refreshPromise;
+}
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const isFormData = options.body instanceof FormData;
   const headers: Record<string, string> = {
@@ -33,14 +61,29 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   const method = (options.method || "GET").toUpperCase();
   const attempts = method === "GET" ? 3 : 1;
   let lastError: Error = new Error("API error");
+  let retriedAuth = false;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const res = await fetch(`${API_URL}${path}`, {
         ...options,
-        headers,
+        headers: {
+          ...headers,
+          ...getAuthHeaders(!isFormData),
+        },
         cache: options.cache ?? "no-store",
       });
+      if (res.status === 401 && !retriedAuth && !path.startsWith("/auth/")) {
+        retriedAuth = true;
+        const ok = await refreshSession();
+        if (ok) {
+          attempt--; // retry with the new token without consuming an attempt
+          continue;
+        }
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        throw new Error("Session expired — please log in again");
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const detail =
