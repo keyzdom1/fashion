@@ -229,13 +229,23 @@ export default function AdminProductsPage() {
 
         {/* Image upload */}
         <div className="md:col-span-2">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide">Product Image</p>
-          <div className="flex flex-wrap items-center gap-4">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide">Cloth Image</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
             <label
               htmlFor="product-image"
-              className="flex cursor-pointer items-center gap-2 rounded-full border-2 border-dashed border-border px-5 py-3 text-sm font-medium hover:border-accent-primary hover:text-accent-primary transition-colors"
+              className={`flex min-h-[140px] flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+                imagePreview
+                  ? "border-accent-primary bg-accent-primary/5"
+                  : "border-border hover:border-accent-primary hover:bg-accent-primary/5"
+              }`}
             >
-              📷 Choose image
+              <span className="text-3xl" aria-hidden>
+                📷
+              </span>
+              <span className="text-sm font-semibold">
+                {imagePreview ? "Change image" : "Click to upload cloth image"}
+              </span>
+              <span className="text-xs text-text-secondary">JPG, PNG, WebP or GIF · max 5MB</span>
               <input
                 id="product-image"
                 ref={fileInputRef}
@@ -246,12 +256,12 @@ export default function AdminProductsPage() {
               />
             </label>
             {imagePreview && (
-              <div className="relative">
+              <div className="relative self-start sm:self-auto">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={imagePreview}
                   alt="Preview"
-                  className="h-24 w-24 rounded-xl object-cover border border-border"
+                  className="h-36 w-36 rounded-2xl object-cover border border-border"
                 />
                 <button
                   type="button"
@@ -260,17 +270,19 @@ export default function AdminProductsPage() {
                     setImagePreview(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
-                  className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-accent-primary text-xs text-white"
+                  className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-accent-primary text-sm text-white shadow"
                   aria-label="Remove image"
                 >
                   ×
                 </button>
               </div>
             )}
-            {imageFile && !uploading && (
-              <span className="text-xs text-text-secondary">{imageFile.name}</span>
-            )}
           </div>
+          {imageFile && (
+            <p className="mt-2 text-xs text-text-secondary">
+              Selected: {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+            </p>
+          )}
         </div>
 
         {/* Sizes */}
