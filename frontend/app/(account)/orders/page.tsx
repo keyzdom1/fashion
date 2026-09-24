@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 
 interface OrderItem {
   id: string;
@@ -78,7 +79,7 @@ export default function OrdersPage() {
               >
                 {order.status}
               </span>
-              <p className="text-lg font-bold text-accent-primary">${Number(order.total).toFixed(2)}</p>
+              <p className="text-lg font-bold text-accent-primary">{formatNaira(order.total)}</p>
             </div>
             <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm text-text-secondary">
               {order.items.map((item) => (

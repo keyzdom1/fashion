@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 
 interface AdminOrder {
   id: string;
@@ -64,7 +65,7 @@ export default function AdminOrdersPage() {
                   <p className="text-xs text-text-secondary">{order.email}</p>
                   <p className="text-xs text-text-secondary">{new Date(order.created_at).toLocaleString()}</p>
                 </div>
-                <p className="text-lg font-bold text-accent-primary">${Number(order.total).toFixed(2)}</p>
+                <p className="text-lg font-bold text-accent-primary">{formatNaira(order.total)}</p>
                 <select
                   value={order.status}
                   onChange={(e) => updateStatus(order.id, e.target.value)}

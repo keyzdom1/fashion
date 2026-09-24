@@ -4,7 +4,7 @@ import { API_URL } from "@/lib/api";
 
 async function getProducts(): Promise<Product[]> {
   try {
-    const res = await fetch(`${API_URL}/products?page_size=500`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/products?page_size=50`, { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return data.items || [];
@@ -33,7 +33,7 @@ export default async function HomePage() {
               <span className="text-accent-secondary">Bright.</span>
             </h1>
             <p className="max-w-md text-text-secondary">
-              Vibrant, trend-forward pieces designed to turn heads. Free shipping on orders over $100.
+              Vibrant, trend-forward pieces designed to turn heads. Free shipping on orders over ₦100,000.
             </p>
             <div className="flex gap-4">
               <Link

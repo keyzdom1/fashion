@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCartStore } from "@/store/cart";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 import Link from "next/link";
 
 export function CartButton() {
@@ -87,7 +88,7 @@ export function CartButton() {
                           {item.size} / {item.color} × {item.qty}
                         </p>
                         <p className="text-sm text-accent-primary">
-                          ${(Number(item.price) * item.qty).toFixed(2)}
+                          {formatNaira(Number(item.price) * item.qty)}
                         </p>
                       </div>
                       <button
@@ -105,7 +106,7 @@ export function CartButton() {
               <div className="border-t border-border p-4 space-y-3">
                 <div className="flex justify-between font-semibold">
                   <span>Total</span>
-                  <span className="text-accent-primary">${Number(total).toFixed(2)}</span>
+                  <span className="text-accent-primary">{formatNaira(total)}</span>
                 </div>
                 <div className="flex gap-2">
                   <Link

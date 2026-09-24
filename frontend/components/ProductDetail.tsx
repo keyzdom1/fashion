@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 import { useCartStore } from "@/store/cart";
 
 interface Variant {
@@ -103,7 +104,7 @@ export function ProductDetail({ product }: { product: ProductFull }) {
         <div className="space-y-6">
           <div>
             <h1 className="font-display text-3xl font-bold md:text-4xl">{product.name}</h1>
-            <p className="mt-2 text-3xl font-bold text-accent-primary">${Number(product.price).toFixed(2)}</p>
+            <p className="mt-2 text-3xl font-bold text-accent-primary">{formatNaira(product.price)}</p>
           </div>
 
           <p className="leading-relaxed text-text-secondary">{product.description}</p>

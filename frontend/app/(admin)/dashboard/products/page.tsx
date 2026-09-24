@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 
 interface AdminProduct {
   id: string;
@@ -61,7 +62,7 @@ export default function AdminProductsPage() {
     setMsg("");
     try {
       const [data, cats] = await Promise.all([
-        api<{ items: AdminProduct[] }>("/products?page_size=500&include_inactive=true"),
+        api<{ items: AdminProduct[] }>("/products?page_size=50&include_inactive=true"),
         api<Category[]>("/categories").catch(() => [] as Category[]),
       ]);
       setProducts(data.items || []);
@@ -273,7 +274,7 @@ export default function AdminProductsPage() {
   }
 
   const inputCls =
-    "rounded-lg border border-border bg-bg px-4 py-2.5 outline-none focus:border-accent-primary w-full";
+    "h-11 rounded-lg border border-border bg-bg px-4 py-0 outline-none focus:border-accent-primary w-full";
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12">
@@ -567,7 +568,7 @@ export default function AdminProductsPage() {
                         {cat?.slug || "uncategorized"}
                       </div>
                     </td>
-                    <td className="p-4">${Number(p.price).toFixed(2)}</td>
+                    <td className="p-4">{formatNaira(p.price)}</td>
                     <td className={`p-4 ${stock < 10 ? "text-accent-primary" : ""}`}>{stock}</td>
                     <td className="p-4">
                       <span

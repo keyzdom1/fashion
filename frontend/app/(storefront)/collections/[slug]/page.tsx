@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 async function getCollection(slug: string): Promise<{ products: Product[]; name: string }> {
   try {
-    const res = await fetch(`${API_URL}/products?category=${slug}&page_size=500`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/products?category=${slug}&page_size=50`, { cache: "no-store" });
     if (!res.ok) return { products: [], name: slug };
     const data = await res.json();
     return { products: data.items || [], name: slug };

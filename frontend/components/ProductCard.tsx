@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 import { useCartStore } from "@/store/cart";
 import { useState } from "react";
 
@@ -67,7 +68,7 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
         <div className="mt-3 space-y-1">
           <h3 className="text-sm font-semibold leading-tight">{product.name}</h3>
-          <p className="text-accent-primary font-bold">${Number(product.price).toFixed(2)}</p>
+          <p className="text-accent-primary font-bold">{formatNaira(product.price)}</p>
         </div>
       </Link>
     </motion.div>

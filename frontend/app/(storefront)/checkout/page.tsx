@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useCartStore } from "@/store/cart";
+import { formatNaira } from "@/lib/format";
 import Link from "next/link";
 
 const STEPS = ["Shipping", "Review", "Payment"] as const;
@@ -158,7 +159,7 @@ export default function CheckoutPage() {
                     <span>
                       {item.product_name} ({item.size}/{item.color}) × {item.qty}
                     </span>
-                    <span>${(Number(item.price) * item.qty).toFixed(2)}</span>
+                    <span>{formatNaira(Number(item.price) * item.qty)}</span>
                   </div>
                 ))}
               </div>
@@ -172,7 +173,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   className="flex-1 rounded-full bg-accent-primary py-3.5 font-semibold text-white hover:opacity-90 disabled:opacity-60"
                 >
-                  {loading ? "Processing…" : `Pay $${Number(total).toFixed(2)}`}
+                  {loading ? "Processing…" : `Pay ${formatNaira(total)}`}
                 </button>
               </div>
             </div>
@@ -185,7 +186,7 @@ export default function CheckoutPage() {
           <div className="mt-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-text-secondary">Subtotal</span>
-              <span>${Number(total).toFixed(2)}</span>
+              <span>{formatNaira(total)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-text-secondary">Shipping</span>
@@ -193,7 +194,7 @@ export default function CheckoutPage() {
             </div>
             <div className="mt-3 flex justify-between border-t border-border pt-3 text-lg font-bold">
               <span>Total</span>
-              <span className="text-accent-primary">${Number(total).toFixed(2)}</span>
+              <span className="text-accent-primary">{formatNaira(total)}</span>
             </div>
           </div>
         </div>

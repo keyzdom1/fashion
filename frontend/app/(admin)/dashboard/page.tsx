@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 import { useAuthStore } from "@/store/auth";
 
 interface Stats {
@@ -70,7 +71,7 @@ export default function DashboardPage() {
         </div>
         <div className="rounded-2xl border border-border bg-surface p-6">
           <p className="text-sm text-text-secondary">Revenue</p>
-          <p className="mt-2 text-4xl font-bold text-accent-tertiary">${stats.revenue.toFixed(2)}</p>
+          <p className="mt-2 text-4xl font-bold text-accent-tertiary">{formatNaira(stats.revenue)}</p>
         </div>
       </div>
     </div>

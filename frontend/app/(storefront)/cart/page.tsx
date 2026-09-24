@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useCartStore } from "@/store/cart";
 import { api } from "@/lib/api";
+import { formatNaira } from "@/lib/format";
 
 export default function CartPage() {
   const { items, total, itemCount, setCart } = useCartStore();
@@ -53,7 +54,7 @@ export default function CartPage() {
                     {item.size} / {item.color} × {item.qty}
                   </p>
                   <p className="mt-auto font-bold text-accent-primary">
-                    ${(Number(item.price) * item.qty).toFixed(2)}
+                    {formatNaira(Number(item.price) * item.qty)}
                   </p>
                 </div>
                 <button
@@ -70,7 +71,7 @@ export default function CartPage() {
           <div className="mt-8 flex items-center justify-between rounded-2xl border border-border bg-surface p-6">
             <div>
               <p className="text-text-secondary">Total</p>
-              <p className="text-2xl font-bold text-accent-primary">${Number(total).toFixed(2)}</p>
+              <p className="text-2xl font-bold text-accent-primary">{formatNaira(total)}</p>
             </div>
             <Link
               href="/checkout"
