@@ -11,7 +11,7 @@ export function CartButton() {
 
   useEffect(() => {
     api<{ items: never[]; total: number; item_count: number }>("/cart")
-      .then((cart) => setCart(cart.items, cart.total, cart.item_count))
+      .then((cart) => setCart(cart.items, cart.total, cart.item_count, false))
       .catch(() => {});
   }, [setCart]);
 
@@ -21,7 +21,7 @@ export function CartButton() {
         `/cart/items/${id}`,
         { method: "DELETE" }
       );
-      setCart(cart.items, cart.total, cart.item_count);
+      setCart(cart.items, cart.total, cart.item_count, false);
     } catch {
       /* ignore */
     }
@@ -107,13 +107,22 @@ export function CartButton() {
                   <span>Total</span>
                   <span className="text-accent-primary">${Number(total).toFixed(2)}</span>
                 </div>
-                <Link
-                  href="/checkout"
-                  onClick={() => setOpen(false)}
-                  className="block w-full rounded-full bg-accent-primary py-3 text-center font-semibold text-white hover:opacity-90 transition-opacity"
-                >
-                  Checkout
-                </Link>
+                <div className="flex gap-2">
+                  <Link
+                    href="/cart"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 rounded-full border border-border py-3 text-center font-semibold hover:border-accent-primary transition-colors"
+                  >
+                    View Cart
+                  </Link>
+                  <Link
+                    href="/checkout"
+                    onClick={() => setOpen(false)}
+                    className="flex-1 rounded-full bg-accent-primary py-3 text-center font-semibold text-white hover:opacity-90 transition-opacity"
+                  >
+                    Checkout
+                  </Link>
+                </div>
               </div>
             </motion.aside>
           </>

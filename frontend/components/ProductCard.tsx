@@ -32,7 +32,7 @@ export function ProductCard({ product }: { product: Product }) {
         method: "POST",
         body: JSON.stringify({ product_variant_id: firstAvailable.id, qty: 1 }),
       });
-      setCart(cart.items, cart.total, cart.item_count);
+      setCart(cart.items, cart.total, cart.item_count, true);
     } catch {
       /* ignore */
     } finally {

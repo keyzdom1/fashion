@@ -18,7 +18,8 @@ interface CartState {
   total: number;
   itemCount: number;
   isOpen: boolean;
-  setCart: (items: CartItem[], total: number, itemCount: number) => void;
+  /** Sync cart data without opening the drawer */
+  setCart: (items: CartItem[], total: number, itemCount: number, open?: boolean) => void;
   setOpen: (open: boolean) => void;
   clear: () => void;
 }
@@ -30,7 +31,13 @@ export const useCartStore = create<CartState>()(
       total: 0,
       itemCount: 0,
       isOpen: false,
-      setCart: (items, total, itemCount) => set({ items, total, itemCount, isOpen: true }),
+      setCart: (items, total, itemCount, open) =>
+        set((state) => ({
+          items,
+          total,
+          itemCount,
+          isOpen: open !== undefined ? open : state.isOpen,
+        })),
       setOpen: (isOpen) => set({ isOpen }),
       clear: () => set({ items: [], total: 0, itemCount: 0, isOpen: false }),
     }),

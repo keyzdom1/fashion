@@ -10,7 +10,7 @@ export default function CartPage() {
 
   useEffect(() => {
     api<{ items: never[]; total: number; item_count: number }>("/cart")
-      .then((c) => setCart(c.items, c.total, c.item_count))
+      .then((c) => setCart(c.items, c.total, c.item_count, false))
       .catch(() => {});
   }, [setCart]);
 
@@ -20,7 +20,7 @@ export default function CartPage() {
         `/cart/items/${id}`,
         { method: "DELETE" }
       );
-      setCart(cart.items, cart.total, cart.item_count);
+      setCart(cart.items, cart.total, cart.item_count, false);
     } catch {
       /* ignore */
     }

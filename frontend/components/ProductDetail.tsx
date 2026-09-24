@@ -58,7 +58,7 @@ export function ProductDetail({ product }: { product: ProductFull }) {
         method: "POST",
         body: JSON.stringify({ product_variant_id: selectedVariant.id, qty }),
       });
-      setCart(cart.items, cart.total, cart.item_count);
+      setCart(cart.items, cart.total, cart.item_count, true);
       setAdded(true);
       setTimeout(() => setAdded(false), 2000);
     } catch (e) {
