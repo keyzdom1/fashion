@@ -1,0 +1,50 @@
+[project]
+name = "fashion-api"
+version = "1.0.0"
+description = "Fashion e-commerce FastAPI backend"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+  "fastapi==0.115.6",
+  "uvicorn[standard]==0.34.0",
+  "sqlalchemy[asyncio]==2.0.36",
+  "asyncpg==0.30.0",
+  "alembic==1.14.0",
+  "pydantic[email]==2.10.4",
+  "pydantic-settings==2.7.0",
+  "python-jose[cryptography]==3.3.0",
+  "passlib[bcrypt]==1.7.4",
+  "bcrypt==4.0.1",
+  "python-multipart==0.0.20",
+  "stripe==11.4.1",
+  "httpx==0.28.1",
+  "cloudinary==1.45.0",
+  "resend==2.5.1",
+]
+
+[tool.poetry]
+name = "fashion-api"
+version = "1.0.0"
+description = "Fashion e-commerce FastAPI backend"
+authors = ["fashion"]
+
+[tool.poetry.dependencies]
+python = "^3.10,<3.14"
+fastapi = "0.115.6"
+uvicorn = { version = "0.34.0", extras = ["standard"] }
+sqlalchemy = { version = "2.0.36", extras = ["asyncio"] }
+asyncpg = "0.30.0"
+alembic = "1.14.0"
+pydantic = { version = "2.10.4", extras = ["email"] }
+pydantic-settings = "2.7.0"
+python-jose = { version = "3.3.0", extras = ["cryptography"] }
+passlib = { version = "1.7.4", extras = ["bcrypt"] }
+bcrypt = "4.0.1"
+python-multipart = "0.0.20"
+stripe = "11.4.1"
+httpx = "0.28.1"
+cloudinary = "1.45.0"
+resend = "2.5.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
