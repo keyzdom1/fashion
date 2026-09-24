@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,7 +10,15 @@ from app.db.session import get_db
 from app.models.category import Category
 from app.models.product import Product, ProductImage, ProductVariant
 from app.models.user import User
-from app.schemas.auth import CategoryOut, ProductCreate, ProductListResponse, ProductOut, ProductUpdate
+from app.schemas.auth import (
+    CategoryOut,
+    ImageOut,
+    ProductCreate,
+    ProductListResponse,
+    ProductOut,
+    ProductUpdate,
+)
+from app.services.media import store_image
 
 router = APIRouter(tags=["products"])
 
@@ -73,11 +83,104 @@ async def create_product(
     existing = await db.execute(select(Product).where(Product.slug == payload.slug))
     if existing.scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Slug already exists")
-    product = Product(**payload.model_dump())
+
+    data = payload.model_dump(exclude={"image_url", "sizes", "colors", "stock_qty"})
+    product = Product(**data)
     db.add(product)
+    await db.flush()
+
+    if payload.image_url:
+        db.add(ProductImage(product_id=product.id, url=payload.image_url, position=0))
+
+    sizes = payload.sizes or ["M"]
+    colors = payload.colors or ["Default"]
+    for color in colors:
+        for size in sizes:
+            sku = f"{payload.slug[:12]}-{color[:3].upper()}-{size.replace(' ', '')}".upper()
+            # ensure unique sku
+            clash = await db.execute(select(ProductVariant).where(ProductVariant.sku == sku))
+            if clash.scalar_one_or_none():
+                sku = f"{sku}-{uuid4().hex[:4].upper()}"
+            db.add(
+                ProductVariant(
+                    product_id=product.id,
+                    size=size,
+                    color=color,
+                    sku=sku,
+                    stock_qty=payload.stock_qty,
+                )
+            )
+
     await db.commit()
-    await db.refresh(product)
-    return product
+    result = await db.execute(
+        select(Product)
+        .where(Product.id == product.id)
+        .options(selectinload(Product.images), selectinload(Product.variants))
+    )
+    return result.scalar_one()
+
+
+@router.post("/products/{product_id}/images", response_model=ImageOut, status_code=status.HTTP_201_CREATED)
+async def upload_product_image(
+    product_id: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> ImageOut:
+    result = await db.execute(select(Product).where(Product.id == product_id))
+    product = result.scalar_one_or_none()
+    if product is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Product not found")
+
+    content_type = file.content_type or "image/jpeg"
+    try:
+        raw = await file.read()
+        url = store_image(raw, content_type)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+
+    pos_result = await db.execute(
+        select(func.coalesce(func.max(ProductImage.position), -1)).where(
+            ProductImage.product_id == product_id
+        )
+    )
+    next_pos = (pos_result.scalar_one() or 0) + 1
+    image = ProductImage(product_id=product_id, url=url, position=next_pos)
+    db.add(image)
+    await db.commit()
+    await db.refresh(image)
+    return ImageOut(url=image.url, id=image.id)
+
+
+@router.post("/uploads", response_model=ImageOut, status_code=status.HTTP_201_CREATED)
+async def upload_image(
+    file: UploadFile = File(...),
+    _: User = Depends(require_admin),
+) -> ImageOut:
+    content_type = file.content_type or "image/jpeg"
+    try:
+        raw = await file.read()
+        url = store_image(raw, content_type)
+    except ValueError as e:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(e))
+    return ImageOut(url=url)
+
+
+@router.delete("/products/{product_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_product_image(
+    product_id: str,
+    image_id: str,
+    db: AsyncSession = Depends(get_db),
+    _: User = Depends(require_admin),
+) -> None:
+    result = await db.execute(
+        select(ProductImage).where(ProductImage.id == image_id, ProductImage.product_id == product_id)
+    )
+    image = result.scalar_one_or_none()
+    if image is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Image not found")
+    await db.delete(image)
+    await db.commit()
 
 
 @router.put("/products/{product_id}", response_model=ProductOut)

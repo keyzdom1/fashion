@@ -10,8 +10,9 @@ function getSessionId(): string {
   return sid;
 }
 
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+function getAuthHeaders(json = true): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (json) headers["Content-Type"] = "application/json";
   const sid = getSessionId();
   if (sid) headers["X-Session-Id"] = sid;
   if (typeof window !== "undefined") {
@@ -22,9 +23,14 @@ function getAuthHeaders(): Record<string, string> {
 }
 
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const isFormData = options.body instanceof FormData;
+  const headers: Record<string, string> = {
+    ...getAuthHeaders(!isFormData),
+    ...(options.headers as Record<string, string> | undefined),
+  };
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: { ...getAuthHeaders(), ...(options.headers || {}) },
+    headers,
     cache: options.cache ?? "no-store",
   });
   if (!res.ok) {

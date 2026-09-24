@@ -79,6 +79,10 @@ class ProductCreate(BaseModel):
     price: Decimal
     category_id: str | None = None
     is_active: bool = True
+    image_url: str | None = None
+    sizes: list[str] = []
+    colors: list[str] = []
+    stock_qty: int = Field(default=10, ge=0)
 
 
 class ProductUpdate(BaseModel):
@@ -163,3 +167,8 @@ class CheckoutResponse(BaseModel):
 
 class Message(BaseModel):
     detail: str
+
+
+class ImageOut(BaseModel):
+    url: str
+    id: str | None = None
