@@ -31,7 +31,7 @@ async def list_products(
     min_price: float | None = None,
     max_price: float | None = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(12, ge=1, le=50),
+    page_size: int = Query(12, ge=1, le=500),
     include_inactive: bool = Query(False, description="Admin only: include hidden products"),
     authorization: str | None = Header(default=None),
 ) -> ProductListResponse:
@@ -88,6 +88,19 @@ async def get_product(product_id: str, db: AsyncSession = Depends(get_db)) -> Pr
     return product
 
 
+async def _resolve_category(db: AsyncSession, category_id: str | None, category_slug: str | None) -> str | None:
+    if category_slug:
+        result = await db.execute(select(Category).where(Category.slug == category_slug))
+        cat = result.scalar_one_or_none()
+        if cat is None:
+            name = category_slug.replace("-", " ").strip().title()
+            cat = Category(name=name, slug=category_slug)
+            db.add(cat)
+            await db.flush()
+        return cat.id
+    return category_id
+
+
 @router.post("/products", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
 async def create_product(
     payload: ProductCreate,
@@ -98,8 +111,9 @@ async def create_product(
     if existing.scalar_one_or_none():
         raise HTTPException(status.HTTP_409_CONFLICT, "Slug already exists")
 
-    data = payload.model_dump(exclude={"image_url", "sizes", "colors", "stock_qty"})
-    product = Product(**data)
+    data = payload.model_dump(exclude={"image_url", "sizes", "colors", "stock_qty", "category_slug"})
+    category_id = await _resolve_category(db, data.pop("category_id", None), payload.category_slug)
+    product = Product(**data, category_id=category_id)
     db.add(product)
     await db.flush()
 
@@ -208,11 +222,22 @@ async def update_product(
     product = result.scalar_one_or_none()
     if product is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Product not found")
-    for key, value in payload.model_dump(exclude_unset=True).items():
+    fields = payload.model_dump(exclude_unset=True)
+    category_slug = fields.pop("category_slug", None)
+    if category_slug is not None or "category_id" in fields:
+        product.category_id = await _resolve_category(
+            db, fields.pop("category_id", None), category_slug
+        )
+    for key, value in fields.items():
         setattr(product, key, value)
     await db.commit()
     await db.refresh(product)
-    return product
+    result = await db.execute(
+        select(Product)
+        .where(Product.id == product.id)
+        .options(selectinload(Product.images), selectinload(Product.variants))
+    )
+    return result.scalar_one()
 
 
 @router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)

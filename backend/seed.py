@@ -14,6 +14,7 @@ CATEGORIES = [
     {"name": "Dresses", "slug": "dresses"},
     {"name": "Tops", "slug": "tops"},
     {"name": "Bottoms", "slug": "bottoms"},
+    {"name": "Pants", "slug": "pants"},
     {"name": "Outerwear", "slug": "outerwear"},
     {"name": "Accessories", "slug": "accessories"},
 ]

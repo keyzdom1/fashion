@@ -4,7 +4,7 @@ import { API_URL } from "@/lib/api";
 
 async function getProducts(): Promise<Product[]> {
   try {
-    const res = await fetch(`${API_URL}/products?page_size=8`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/products?page_size=500`, { cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
     return data.items || [];
@@ -66,8 +66,8 @@ export default async function HomePage() {
       {/* Categories */}
       <section className="mx-auto max-w-7xl px-4 py-16">
         <h2 className="font-display text-3xl font-bold">Shop by Category</h2>
-        <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-5">
-          {["dresses", "tops", "bottoms", "outerwear", "accessories"].map((slug) => (
+        <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
+          {["dresses", "tops", "bottoms", "pants", "outerwear", "accessories"].map((slug) => (
             <Link
               key={slug}
               href={`/collections/${slug}`}
@@ -84,10 +84,8 @@ export default async function HomePage() {
       {/* Products */}
       <section className="mx-auto max-w-7xl px-4 pb-20">
         <div className="flex items-end justify-between">
-          <h2 className="font-display text-3xl font-bold">Trending Now</h2>
-          <Link href="/collections/dresses" className="text-sm font-semibold text-accent-primary hover:underline">
-            View all →
-          </Link>
+          <h2 className="font-display text-3xl font-bold">All Clothes</h2>
+          <span className="text-sm text-text-secondary">{products.length} items</span>
         </div>
         {products.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-border p-12 text-center text-text-secondary">
@@ -95,7 +93,7 @@ export default async function HomePage() {
             <code>python seed.py</code> to populate the catalog.
           </div>
         ) : (
-          <div className="mt-8 grid grid-cols-2 gap-6 md:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

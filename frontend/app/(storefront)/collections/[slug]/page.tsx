@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 async function getCollection(slug: string): Promise<{ products: Product[]; name: string }> {
   try {
-    const res = await fetch(`${API_URL}/products?category=${slug}&page_size=24`, { cache: "no-store" });
+    const res = await fetch(`${API_URL}/products?category=${slug}&page_size=500`, { cache: "no-store" });
     if (!res.ok) return { products: [], name: slug };
     const data = await res.json();
     return { products: data.items || [], name: slug };
@@ -14,7 +14,7 @@ async function getCollection(slug: string): Promise<{ products: Product[]; name:
 }
 
 export default async function CollectionPage({ params }: { params: { slug: string } }) {
-  const valid = ["dresses", "tops", "bottoms", "outerwear", "accessories"];
+  const valid = ["dresses", "tops", "bottoms", "pants", "outerwear", "accessories"];
   if (!valid.includes(params.slug)) notFound();
 
   const { products, name } = await getCollection(params.slug);

@@ -78,6 +78,7 @@ class ProductCreate(BaseModel):
     description: str = ""
     price: Decimal
     category_id: str | None = None
+    category_slug: str | None = None
     is_active: bool = True
     image_url: str | None = None
     sizes: list[str] = []
@@ -91,6 +92,7 @@ class ProductUpdate(BaseModel):
     description: str | None = None
     price: Decimal | None = None
     category_id: str | None = None
+    category_slug: str | None = None
     is_active: bool | None = None
 
 
