@@ -36,11 +36,13 @@ export default function AdminProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function load() {
+    setLoading(true);
+    setMsg("");
     try {
-      const data = await api<{ items: AdminProduct[] }>("/products?page_size=50");
+      const data = await api<{ items: AdminProduct[] }>("/products?page_size=50&include_inactive=true");
       setProducts(data.items || []);
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Failed to load");
+      setMsg(e instanceof Error ? e.message : "Failed to load products");
       setMsgOk(false);
     } finally {
       setLoading(false);
@@ -363,7 +365,19 @@ export default function AdminProductsPage() {
             ) : products.length === 0 ? (
               <tr>
                 <td colSpan={6} className="p-8 text-center text-text-secondary">
-                  No products
+                  {msg ? (
+                    <div className="space-y-3">
+                      <p className="text-accent-primary">{msg}</p>
+                      <button
+                        onClick={load}
+                        className="rounded-full border border-border px-5 py-2 text-sm font-semibold hover:border-accent-primary"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    "No products"
+                  )}
                 </td>
               </tr>
             ) : (

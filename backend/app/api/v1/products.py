@@ -1,15 +1,15 @@
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.deps import get_current_user, require_admin
+from app.core.deps import decode_token_optional, get_current_user, require_admin
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.product import Product, ProductImage, ProductVariant
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import (
     CategoryOut,
     ImageOut,
@@ -32,8 +32,22 @@ async def list_products(
     max_price: float | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(12, ge=1, le=50),
+    include_inactive: bool = Query(False, description="Admin only: include hidden products"),
+    authorization: str | None = Header(default=None),
 ) -> ProductListResponse:
-    query = select(Product).where(Product.is_active.is_(True))
+    query = select(Product)
+    if include_inactive:
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Admin access required")
+        payload = decode_token_optional(authorization.removeprefix("Bearer "))
+        if payload is None or payload.get("type") != "access":
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid or expired token")
+        user_result = await db.execute(select(User).where(User.id == payload["sub"]))
+        user = user_result.scalar_one_or_none()
+        if user is None or user.role != UserRole.ADMIN:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin access required")
+    else:
+        query = query.where(Product.is_active.is_(True))
     if q:
         pattern = f"%{q}%"
         query = query.where(or_(Product.name.ilike(pattern), Product.description.ilike(pattern)))

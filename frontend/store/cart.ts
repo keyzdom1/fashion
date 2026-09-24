@@ -41,6 +41,13 @@ export const useCartStore = create<CartState>()(
       setOpen: (isOpen) => set({ isOpen }),
       clear: () => set({ items: [], total: 0, itemCount: 0, isOpen: false }),
     }),
-    { name: "cart-preview" }
+    {
+      name: "cart-preview",
+      partialize: (state) => ({
+        items: state.items,
+        total: state.total,
+        itemCount: state.itemCount,
+      }),
+    }
   )
 );

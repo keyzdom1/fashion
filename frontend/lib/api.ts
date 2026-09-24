@@ -22,23 +22,51 @@ function getAuthHeaders(json = true): Record<string, string> {
   return headers;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const isFormData = options.body instanceof FormData;
   const headers: Record<string, string> = {
     ...getAuthHeaders(!isFormData),
     ...(options.headers as Record<string, string> | undefined),
   };
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-    cache: options.cache ?? "no-store",
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail || `API error ${res.status}`);
+  const method = (options.method || "GET").toUpperCase();
+  const attempts = method === "GET" ? 3 : 1;
+  let lastError: Error = new Error("API error");
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const res = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers,
+        cache: options.cache ?? "no-store",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.detail || `API error ${res.status}`);
+        const transient = res.status >= 500;
+        if (transient && attempt < attempts - 1) {
+          lastError = err;
+          await sleep(800 * (attempt + 1));
+          continue;
+        }
+        throw err;
+      }
+      if (res.status === 204) return undefined as T;
+      return res.json();
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error("Network error");
+      const isNetwork =
+        e instanceof TypeError ||
+        (e instanceof Error && /failed to fetch|network/i.test(e.message));
+      if (isNetwork && attempt < attempts - 1) {
+        await sleep(800 * (attempt + 1));
+        continue;
+      }
+      if (attempt === attempts - 1 || !isNetwork) throw lastError;
+    }
   }
-  if (res.status === 204) return undefined as T;
-  return res.json();
+  throw lastError;
 }
 
 export async function login(email: string, password: string) {
