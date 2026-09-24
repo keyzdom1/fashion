@@ -50,8 +50,8 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState("");
   const [msgOk, setMsgOk] = useState(false);
@@ -80,15 +80,31 @@ export default function AdminProductsPage() {
   }, []);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] || null;
-    setImageFile(file);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) {
+      setImageFiles([]);
+      setImagePreviews([]);
+      return;
     }
+    setImageFiles((prev) => [...prev, ...files]);
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        setImagePreviews((prev) => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function removePendingImage(index: number) {
+    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function clearPendingImages() {
+    setImageFiles([]);
+    setImagePreviews([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function toggleSize(s: string) {
@@ -126,9 +142,7 @@ export default function AdminProductsPage() {
       colors: ["Black"],
       stock_qty: "10",
     });
-    setImageFile(null);
-    setImagePreview(p.images?.[0]?.url || null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    clearPendingImages();
     setMsg("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -136,9 +150,7 @@ export default function AdminProductsPage() {
   function cancelEdit() {
     setEditingId(null);
     setForm(EMPTY_FORM);
-    setImageFile(null);
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    clearPendingImages();
     setMsg("");
   }
 
@@ -160,23 +172,9 @@ export default function AdminProductsPage() {
 
     setUploading(true);
     try {
-      if (editingId) {
-        if (imageFile) {
-          const existing = products.find((p) => p.id === editingId);
-          const firstImg = existing?.images?.[0];
-          if (firstImg) {
-            await api(`/products/${editingId}/images/${firstImg.id}`, {
-              method: "DELETE",
-            });
-          }
-          const fd = new FormData();
-          fd.append("file", imageFile);
-          await api(`/products/${editingId}/images`, {
-            method: "POST",
-            body: fd,
-          });
-        }
+      let productId = editingId;
 
+      if (editingId) {
         await api(`/products/${editingId}`, {
           method: "PUT",
           body: JSON.stringify({
@@ -187,57 +185,51 @@ export default function AdminProductsPage() {
             category_slug: categorySlug,
           }),
         });
-
-        setMsg("Product updated");
-        setMsgOk(true);
-        cancelEdit();
-        load();
-        return;
+      } else {
+        const created = await api<AdminProduct>("/products", {
+          method: "POST",
+          body: JSON.stringify({
+            name: form.name,
+            slug: form.slug,
+            description: form.description,
+            price: form.price,
+            category_slug: categorySlug,
+            sizes: form.sizes,
+            colors: form.colors,
+            stock_qty: Number(form.stock_qty) || 10,
+          }),
+        });
+        productId = created.id;
       }
 
-      let image_url: string | undefined;
+      let uploaded = 0;
       let uploadWarning = "";
-      if (imageFile) {
-        const fd = new FormData();
-        fd.append("file", imageFile);
-        try {
-          const uploaded = await api<{ url: string }>("/uploads", {
-            method: "POST",
-            body: fd,
-          });
-          image_url = uploaded.url;
-        } catch (uploadErr) {
-          const msg = uploadErr instanceof Error ? uploadErr.message : "Upload failed";
-          if (/not found|404/i.test(msg)) {
-            uploadWarning = " Image upload is unavailable until the backend is redeployed on Render — product saved without image.";
-          } else {
+      if (productId && imageFiles.length > 0) {
+        for (const file of imageFiles) {
+          const fd = new FormData();
+          fd.append("file", file);
+          try {
+            await api(`/products/${productId}/images`, { method: "POST", body: fd });
+            uploaded++;
+          } catch (uploadErr) {
+            const m = uploadErr instanceof Error ? uploadErr.message : "Upload failed";
+            if (/not found|404/i.test(m)) {
+              uploadWarning =
+                " Image upload unavailable until the backend is redeployed on Render — skipped remaining images.";
+              break;
+            }
             throw uploadErr;
           }
         }
       }
 
-      await api("/products", {
-        method: "POST",
-        body: JSON.stringify({
-          name: form.name,
-          slug: form.slug,
-          description: form.description,
-          price: form.price,
-          category_slug: categorySlug,
-          image_url: image_url || null,
-          sizes: form.sizes,
-          colors: form.colors,
-          stock_qty: Number(form.stock_qty) || 10,
-        }),
-      });
-
+      const wasEdit = Boolean(editingId);
       setForm(EMPTY_FORM);
-      setImageFile(null);
-      setImagePreview(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setEditingId(null);
+      clearPendingImages();
       setMsg(
-        "Product created" +
-          (image_url ? " with image" : "") +
+        (wasEdit ? "Product updated" : "Product created") +
+          (uploaded > 0 ? ` with ${uploaded} image${uploaded > 1 ? "s" : ""}` : "") +
           uploadWarning
       );
       setMsgOk(!uploadWarning);
@@ -250,16 +242,43 @@ export default function AdminProductsPage() {
     }
   }
 
-  async function addImageToProduct(productId: string, file: File) {
-    const fd = new FormData();
-    fd.append("file", file);
+  async function addImagesToProduct(productId: string, files: File[]) {
+    if (files.length === 0) return;
+    setMsg("");
+    let uploaded = 0;
+    for (const file of files) {
+      const fd = new FormData();
+      fd.append("file", file);
+      try {
+        await api(`/products/${productId}/images`, { method: "POST", body: fd });
+        uploaded++;
+      } catch (e) {
+        const m = e instanceof Error ? e.message : "Upload failed";
+        if (/not found|404/i.test(m)) {
+          setMsg(
+            "Image endpoint not found — redeploy the backend on Render to add images"
+          );
+          setMsgOk(false);
+          return;
+        }
+        setMsg(m);
+        setMsgOk(false);
+        return;
+      }
+    }
+    setMsg(`${uploaded} image${uploaded > 1 ? "s" : ""} added`);
+    setMsgOk(true);
+    load();
+  }
+
+  async function removeImage(productId: string, imageId: string) {
     try {
-      await api(`/products/${productId}/images`, { method: "POST", body: fd });
-      setMsg("Image added");
+      await api(`/products/${productId}/images/${imageId}`, { method: "DELETE" });
+      setMsg("Image removed");
       setMsgOk(true);
       load();
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : "Upload failed");
+      setMsg(e instanceof Error ? e.message : "Could not remove image");
       setMsgOk(false);
     }
   }
@@ -380,12 +399,39 @@ export default function AdminProductsPage() {
 
         {/* Image upload */}
         <div className="md:col-span-2">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wide">Cloth Image</p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+          <p className="mb-2 text-sm font-semibold uppercase tracking-wide">
+            Cloth Images
+            {imageFiles.length > 0 ? ` (${imageFiles.length} selected)` : ""}
+          </p>
+
+          {editingId && (
+            <div className="mb-3 flex flex-wrap gap-3">
+              {(products.find((p) => p.id === editingId)?.images || []).map((img) => (
+                <div key={img.id} className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="h-28 w-24 rounded-xl border border-border object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(editingId, img.id)}
+                    className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-accent-primary text-sm text-white shadow"
+                    aria-label="Remove image"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex flex-col gap-3">
             <label
               htmlFor="product-image"
-              className={`flex min-h-[140px] flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
-                imagePreview
+              className={`flex min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+                imageFiles.length > 0
                   ? "border-accent-primary bg-accent-primary/5"
                   : "border-border hover:border-accent-primary hover:bg-accent-primary/5"
               }`}
@@ -394,50 +440,50 @@ export default function AdminProductsPage() {
                 📷
               </span>
               <span className="text-sm font-semibold">
-                {imagePreview
-                  ? imageFile
-                    ? "Change selected image"
-                    : "Replace image"
-                  : "Click to upload cloth image"}
+                {imageFiles.length > 0 ? "Add more images" : "Click to upload cloth images"}
               </span>
-              <span className="text-xs text-text-secondary">JPG, PNG, WebP or GIF · max 5MB</span>
+              <span className="text-xs text-text-secondary">
+                Select multiple files · JPG, PNG, WebP or GIF · max 5MB each
+              </span>
               <input
                 id="product-image"
                 ref={fileInputRef}
                 type="file"
+                multiple
                 accept="image/jpeg,image/png,image/webp,image/gif"
                 onChange={onFileChange}
                 className="sr-only"
               />
             </label>
-            {imagePreview && (
-              <div className="relative self-start sm:self-auto">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="h-36 w-36 rounded-2xl object-cover border border-border"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setImageFile(null);
-                    setImagePreview(null);
-                    if (fileInputRef.current) fileInputRef.current.value = "";
-                  }}
-                  className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-accent-primary text-sm text-white shadow"
-                  aria-label="Remove image"
-                >
-                  ×
-                </button>
+
+            {imagePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {imagePreviews.map((src, i) => (
+                  <div key={i} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={`Preview ${i + 1}`}
+                      className="h-28 w-24 rounded-xl border border-border object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePendingImage(i)}
+                      className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-accent-primary text-sm text-white shadow"
+                      aria-label="Remove selected image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
+            {imageFiles.length > 0 && (
+              <p className="text-xs text-text-secondary">
+                {imageFiles.map((f) => `${f.name} (${(f.size / 1024).toFixed(0)} KB)`).join(", ")}
+              </p>
+            )}
           </div>
-          {imageFile && (
-            <p className="mt-2 text-xs text-text-secondary">
-              Selected: {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
-            </p>
-          )}
         </div>
 
         {!editingId && (
@@ -560,14 +606,15 @@ export default function AdminProductsPage() {
                           <span className="text-text-secondary">—</span>
                         )}
                         <label className="cursor-pointer text-xs text-accent-secondary hover:underline">
-                          + image
+                          + image{(p.images?.length || 0) > 0 ? ` (${p.images?.length || 0})` : ""}
                           <input
                             type="file"
-                            accept="image/jpeg,image/png,image/webp"
+                            multiple
+                            accept="image/jpeg,image/png,image/webp,image/gif"
                             className="sr-only"
                             onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) addImageToProduct(p.id, f);
+                              const files = Array.from(e.target.files || []);
+                              if (files.length > 0) addImagesToProduct(p.id, files);
                               e.target.value = "";
                             }}
                           />
