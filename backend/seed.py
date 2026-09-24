@@ -120,19 +120,23 @@ async def seed() -> None:
                         )
                     )
 
-        admin = await db.execute(select(User).where(User.email == "admin@fashion.test"))
-        if admin.scalar_one_or_none() is None:
-            db.add(
-                User(
-                    email="admin@fashion.test",
-                    hashed_password=hash_password("Admin123!"),
-                    full_name="Store Admin",
-                    role=UserRole.ADMIN,
+        for email, password, name in [
+            ("donworldwider2@gmail.com", "lapTOP1", "Store Admin"),
+            ("admin@fashion.test", "Admin123!", "Store Admin"),
+        ]:
+            admin = await db.execute(select(User).where(User.email == email))
+            if admin.scalar_one_or_none() is None:
+                db.add(
+                    User(
+                        email=email,
+                        hashed_password=hash_password(password),
+                        full_name=name,
+                        role=UserRole.ADMIN,
+                    )
                 )
-            )
 
         await db.commit()
-        print("Seed complete: 5 categories, 6 products, admin@fashion.test / Admin123!")
+        print("Seed complete: 5 categories, 6 products, 2 admins")
 
 
 if __name__ == "__main__":

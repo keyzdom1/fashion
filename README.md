@@ -60,7 +60,10 @@ npm run dev
 
 Site: http://localhost:3000
 
-### Seed admin
+### Admin login
+
+- Email: `donworldwider2@gmail.com`
+- Password: `lapTOP1`
 
 - Email: `admin@fashion.test`
 - Password: `Admin123!`
