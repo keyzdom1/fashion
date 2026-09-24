@@ -27,7 +27,7 @@ Full-stack fashion e-commerce website.
 2. Root `vercel.json` already builds `/frontend`. If asked for Root Directory, set it to `frontend`.
 3. Env var:
    ```
-   NEXT_PUBLIC_API_URL=https://fashion-api.onrender.com/api/v1
+   NEXT_PUBLIC_API_URL=https://fashion-dim3.onrender.com/api/v1
    ```
 4. Deploy.
 
