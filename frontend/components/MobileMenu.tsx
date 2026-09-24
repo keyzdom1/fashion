@@ -70,18 +70,24 @@ export function MobileMenu() {
               </div>
 
               <nav className="flex flex-col gap-1 p-4">
-                {LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={`rounded-lg px-4 py-3 text-base font-medium transition-colors hover:bg-accent-tertiary/20 hover:text-accent-primary ${
-                      pathname === link.href ? "bg-accent-primary/10 text-accent-primary" : ""
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {LINKS.map((link) => {
+                  const active =
+                    pathname === link.href || pathname.startsWith(`${link.href}/`);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={`border-b-2 px-4 py-3 text-base font-medium transition-colors hover:text-accent-primary ${
+                        active
+                          ? "border-accent-primary text-accent-primary"
+                          : "border-transparent"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <div className="mt-auto border-t border-border p-4 space-y-2">

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
 import { CartButton } from "./CartButton";
 import { UserMenu } from "./UserMenu";
@@ -14,6 +17,8 @@ const LINKS = [
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-surface shadow-sm">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:py-4">
@@ -25,15 +30,22 @@ export function Navbar() {
         </div>
 
         <div className="hidden items-center gap-8 md:flex">
-          {LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-sm font-medium hover:text-accent-primary transition-colors"
-            >
-              {l.label}
-            </Link>
-          ))}
+          {LINKS.map((l) => {
+            const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className={`border-b-2 pb-1 text-sm font-medium transition-colors hover:text-accent-primary ${
+                  active
+                    ? "border-accent-primary text-accent-primary"
+                    : "border-transparent"
+                }`}
+              >
+                {l.label}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
